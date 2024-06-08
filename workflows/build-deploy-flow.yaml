@@ -1,0 +1,42 @@
+name: Build and Deploy Next.js site
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  ci-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+      - name: ノードのインストール
+        uses: actions/setup-node-env@v1
+        with:
+          node-version: 20
+          cache: npm
+      - name: pageの設定
+        uses: actions/configure-pages@v5
+        with:
+          static_site_generator: next
+      - name: modulesのインストール
+        run: npm ci
+      - name: ビルド
+        run: npm run build
+      - name: アーティファクトの作成
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: ci-build
+    steps:
+      - name: デプロイ
+        uses: actions/deploy-pages@v4
